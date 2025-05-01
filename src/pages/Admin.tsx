@@ -158,9 +158,8 @@ const Admin = () => {
     
     const days = parseInt(proDurationDays);
     if (isNaN(days) || days <= 0) {
-      toast("Erro", {
-        description: "Por favor, insira um número válido de dias.",
-        variant: "destructive"
+      toast.error("Erro", {
+        description: "Por favor, insira um número válido de dias."
       });
       return;
     }
@@ -175,9 +174,8 @@ const Admin = () => {
 
   const toggleUserAdmin = (user: User) => {
     if (user.id === '1') {
-      toast("Operação não permitida", {
-        description: "Não é possível modificar o status de admin do usuário principal.",
-        variant: "destructive"
+      toast.error("Operação não permitida", {
+        description: "Não é possível modificar o status de admin do usuário principal."
       });
       return;
     }
