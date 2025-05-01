@@ -116,8 +116,7 @@ const Admin = () => {
     setNewProDays("30");
     setNewIsAdmin(false);
     setIsUserDialogOpen(false);
-    toast({
-      title: "Usuário adicionado",
+    toast("Usuário adicionado", {
       description: `O usuário ${newUsername} foi criado com sucesso.`
     });
   };
@@ -149,8 +148,7 @@ const Admin = () => {
     updateUser(userToEdit.id, updates);
     setIsEditUserDialogOpen(false);
     setUserToEdit(null);
-    toast({
-      title: "Usuário atualizado",
+    toast("Usuário atualizado", {
       description: "As informações do usuário foram atualizadas com sucesso."
     });
   };
@@ -160,8 +158,7 @@ const Admin = () => {
     
     const days = parseInt(proDurationDays);
     if (isNaN(days) || days <= 0) {
-      toast({
-        title: "Erro",
+      toast("Erro", {
         description: "Por favor, insira um número válido de dias.",
         variant: "destructive"
       });
@@ -171,16 +168,14 @@ const Admin = () => {
     setPro(userForProSettings.id, true, days);
     setIsProDurationDialogOpen(false);
     setUserForProSettings(null);
-    toast({
-      title: "Status PRO atualizado",
+    toast("Status PRO atualizado", {
       description: `Acesso PRO ativado por ${days} dias.`
     });
   };
 
   const toggleUserAdmin = (user: User) => {
     if (user.id === '1') {
-      toast({
-        title: "Operação não permitida",
+      toast("Operação não permitida", {
         description: "Não é possível modificar o status de admin do usuário principal.",
         variant: "destructive"
       });
@@ -188,8 +183,7 @@ const Admin = () => {
     }
     
     setAdmin(user.id, !user.isAdmin);
-    toast({
-      title: "Status de admin atualizado",
+    toast("Status de admin atualizado", {
       description: user.isAdmin ? "Privilégios de admin removidos." : "Privilégios de admin concedidos."
     });
   };
@@ -202,8 +196,7 @@ const Admin = () => {
 
   const removeProAccess = (id: string) => {
     setPro(id, false, 0);
-    toast({
-      title: "Status PRO removido",
+    toast("Status PRO removido", {
       description: "O acesso PRO foi removido deste usuário."
     });
   };
