@@ -1,7 +1,6 @@
 
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -33,24 +32,6 @@ const Home = () => {
             ferramentas de simulação e muito mais. Disponível para todos os profissionais 
             e estudantes da área.
           </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Button 
-              asChild
-              className="text-lg px-8 py-3 bg-eprojects-orange hover:bg-eprojects-orange/80 text-white"
-              onClick={() => navigate("/register")}
-            >
-              <a href="/register">Criar Conta</a>
-            </Button>
-            <Button 
-              asChild
-              variant="outline"
-              className="text-lg px-8 py-3 border-eprojects-orange text-eprojects-orange hover:bg-eprojects-orange/10"
-              onClick={() => navigate("/login")}
-            >
-              <a href="/login">Entrar</a>
-            </Button>
-          </div>
         </div>
         
         <div className="mt-20 md:mt-32 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
