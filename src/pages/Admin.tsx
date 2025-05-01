@@ -47,10 +47,11 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { User, Tool } from "@/types";
+import { toast } from "@/components/ui/toast";
 
 const Admin = () => {
   const { currentUser, isAdmin } = useAuth();
-  const { users, addUser, updateUser, deleteUser, setPro } = useUsers();
+  const { users, addUser, updateUser, deleteUser, setPro, setAdmin } = useUsers();
   const { tools, addTool, updateTool, deleteTool } = useTools();
   const navigate = useNavigate();
 
@@ -60,6 +61,7 @@ const Admin = () => {
   const [newPassword, setNewPassword] = useState("");
   const [newIsPro, setNewIsPro] = useState(false);
   const [newProDays, setNewProDays] = useState("30");
+  const [newIsAdmin, setNewIsAdmin] = useState(false);
   
   const [newToolName, setNewToolName] = useState("");
   const [newToolDescription, setNewToolDescription] = useState("");
@@ -74,9 +76,12 @@ const Admin = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
   const [isEditToolDialogOpen, setIsEditToolDialogOpen] = useState(false);
+  const [isProDurationDialogOpen, setIsProDurationDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ id: string; type: "user" | "tool" } | null>(null);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [toolToEdit, setToolToEdit] = useState<Tool | null>(null);
+  const [userForProSettings, setUserForProSettings] = useState<User | null>(null);
+  const [proDurationDays, setProDurationDays] = useState("30");
   
   useEffect(() => {
     if (!currentUser || !isAdmin) {
@@ -93,7 +98,7 @@ const Admin = () => {
       username: newUsername,
       email: newEmail,
       isPro: newIsPro,
-      isAdmin: false,
+      isAdmin: newIsAdmin,
       createdAt: new Date(),
       toolAccess: ['engineering-calculator', 'electrical-calculator'],
     };
@@ -110,7 +115,12 @@ const Admin = () => {
     setNewPassword("");
     setNewIsPro(false);
     setNewProDays("30");
+    setNewIsAdmin(false);
     setIsUserDialogOpen(false);
+    toast({
+      title: "Usuário adicionado",
+      description: `O usuário ${newUsername} foi criado com sucesso.`
+    });
   };
 
   const handleEditUser = () => {
@@ -120,6 +130,7 @@ const Admin = () => {
       username: userToEdit.username,
       email: userToEdit.email,
       isPro: userToEdit.isPro,
+      isAdmin: userToEdit.isAdmin,
     };
     
     if (userToEdit.isPro) {
@@ -139,10 +150,63 @@ const Admin = () => {
     updateUser(userToEdit.id, updates);
     setIsEditUserDialogOpen(false);
     setUserToEdit(null);
+    toast({
+      title: "Usuário atualizado",
+      description: "As informações do usuário foram atualizadas com sucesso."
+    });
   };
 
-  const setUserPro = (id: string, isPro: boolean) => {
-    setPro(id, isPro, 30); // Define 30 dias de acesso Pro
+  const handleProDurationConfirm = () => {
+    if (!userForProSettings) return;
+    
+    const days = parseInt(proDurationDays);
+    if (isNaN(days) || days <= 0) {
+      toast({
+        title: "Erro",
+        description: "Por favor, insira um número válido de dias.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setPro(userForProSettings.id, true, days);
+    setIsProDurationDialogOpen(false);
+    setUserForProSettings(null);
+    toast({
+      title: "Status PRO atualizado",
+      description: `Acesso PRO ativado por ${days} dias.`
+    });
+  };
+
+  const toggleUserAdmin = (user: User) => {
+    if (user.id === '1') {
+      toast({
+        title: "Operação não permitida",
+        description: "Não é possível modificar o status de admin do usuário principal.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setAdmin(user.id, !user.isAdmin);
+    toast({
+      title: "Status de admin atualizado",
+      description: user.isAdmin ? "Privilégios de admin removidos." : "Privilégios de admin concedidos."
+    });
+  };
+
+  const openProDurationDialog = (user: User) => {
+    setUserForProSettings(user);
+    setProDurationDays("30");
+    setIsProDurationDialogOpen(true);
+  };
+
+  const removeProAccess = (id: string) => {
+    setPro(id, false, 0);
+    toast({
+      title: "Status PRO removido",
+      description: "O acesso PRO foi removido deste usuário."
+    });
   };
 
   // Funções para gerenciamento de ferramentas
@@ -203,6 +267,18 @@ const Admin = () => {
     return new Date(date).toLocaleDateString();
   };
 
+  // Calcular dias restantes para expiração PRO
+  const getRemainingProDays = (expiryDate: Date | undefined) => {
+    if (!expiryDate) return 0;
+    
+    const expiry = new Date(expiryDate);
+    const today = new Date();
+    const diffTime = expiry.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays > 0 ? diffDays : 0;
+  };
+
   if (!currentUser || !isAdmin) {
     return null; // Redirecionando...
   }
@@ -255,7 +331,7 @@ const Admin = () => {
                         <TableHead className="text-eprojects-white">Usuário</TableHead>
                         <TableHead className="text-eprojects-white">Email</TableHead>
                         <TableHead className="text-eprojects-white">Status</TableHead>
-                        <TableHead className="text-eprojects-white">Expiração Pro</TableHead>
+                        <TableHead className="text-eprojects-white">Dias PRO Restantes</TableHead>
                         <TableHead className="text-eprojects-white">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -283,9 +359,9 @@ const Admin = () => {
                             )}
                           </TableCell>
                           <TableCell className="text-eprojects-white/80">
-                            {user.isPro ? formatDate(user.proExpiryDate) : "N/A"}
+                            {user.isPro ? `${getRemainingProDays(user.proExpiryDate)} dias` : "N/A"}
                           </TableCell>
-                          <TableCell className="flex gap-2">
+                          <TableCell className="flex flex-wrap gap-2">
                             <Button
                               variant="outline"
                               className="border-eprojects-orange text-eprojects-orange hover:bg-eprojects-orange hover:text-white"
@@ -300,7 +376,7 @@ const Admin = () => {
                               <Button
                                 variant="outline"
                                 className="border-eprojects-orange text-eprojects-orange hover:bg-eprojects-orange hover:text-white"
-                                onClick={() => setUserPro(user.id, false)}
+                                onClick={() => removeProAccess(user.id)}
                               >
                                 Remover PRO
                               </Button>
@@ -308,22 +384,31 @@ const Admin = () => {
                               <Button
                                 variant="outline"
                                 className="border-eprojects-orange text-eprojects-orange hover:bg-eprojects-orange hover:text-white"
-                                onClick={() => setUserPro(user.id, true)}
+                                onClick={() => openProDurationDialog(user)}
                               >
                                 Ativar PRO
                               </Button>
                             )}
-                            {!user.isAdmin && (
-                              <Button
-                                variant="outline"
-                                className="border-destructive text-destructive hover:bg-destructive hover:text-white"
-                                onClick={() => {
-                                  setItemToDelete({ id: user.id, type: "user" });
-                                  setIsDeleteDialogOpen(true);
-                                }}
-                              >
-                                Excluir
-                              </Button>
+                            {user.id !== '1' && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  className={`border-eprojects-orange ${user.isAdmin ? 'bg-eprojects-orange/20' : ''} text-eprojects-orange hover:bg-eprojects-orange hover:text-white`}
+                                  onClick={() => toggleUserAdmin(user)}
+                                >
+                                  {user.isAdmin ? "Remover Admin" : "Tornar Admin"}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  className="border-destructive text-destructive hover:bg-destructive hover:text-white"
+                                  onClick={() => {
+                                    setItemToDelete({ id: user.id, type: "user" });
+                                    setIsDeleteDialogOpen(true);
+                                  }}
+                                >
+                                  Excluir
+                                </Button>
+                              </>
                             )}
                           </TableCell>
                         </TableRow>
@@ -481,6 +566,14 @@ const Admin = () => {
                 />
               </div>
             )}
+            <div className="flex items-center space-x-2 mt-4">
+              <Checkbox 
+                id="new-is-admin" 
+                checked={newIsAdmin}
+                onCheckedChange={() => setNewIsAdmin(!newIsAdmin)}
+              />
+              <Label htmlFor="new-is-admin">Conceder privilégios de Admin</Label>
+            </div>
           </div>
           <DialogFooter>
             <Button 
@@ -534,10 +627,19 @@ const Admin = () => {
                   id="edit-is-pro" 
                   checked={userToEdit.isPro}
                   onCheckedChange={() => setUserToEdit({ ...userToEdit, isPro: !userToEdit.isPro })}
-                  disabled={userToEdit.isAdmin} // Não permitir remover PRO de admin
                 />
                 <Label htmlFor="edit-is-pro">Modo PRO</Label>
               </div>
+              {userToEdit.id !== '1' && (
+                <div className="flex items-center space-x-2 mt-4">
+                  <Checkbox 
+                    id="edit-is-admin" 
+                    checked={userToEdit.isAdmin}
+                    onCheckedChange={() => setUserToEdit({ ...userToEdit, isAdmin: !userToEdit.isAdmin })}
+                  />
+                  <Label htmlFor="edit-is-admin">Privilégios de Admin</Label>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
@@ -552,6 +654,44 @@ const Admin = () => {
               className="bg-eprojects-orange hover:bg-eprojects-orange/90"
             >
               Salvar Alterações
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Diálogo de Configuração de Duração PRO */}
+      <Dialog open={isProDurationDialogOpen} onOpenChange={setIsProDurationDialogOpen}>
+        <DialogContent className="bg-black/90 border-white/10 text-eprojects-white">
+          <DialogHeader>
+            <DialogTitle className="text-eprojects-white">Configurar Acesso PRO</DialogTitle>
+            <DialogDescription className="text-eprojects-white/70">
+              {userForProSettings && `Definir período de acesso PRO para ${userForProSettings.username}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="pro-duration">Dias de acesso PRO</Label>
+              <Input
+                id="pro-duration"
+                type="number"
+                value={proDurationDays}
+                onChange={(e) => setProDurationDays(e.target.value)}
+                className="bg-black/50 border-white/20 text-eprojects-white"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsProDurationDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleProDurationConfirm}
+              className="bg-eprojects-orange hover:bg-eprojects-orange/90"
+            >
+              Confirmar
             </Button>
           </DialogFooter>
         </DialogContent>

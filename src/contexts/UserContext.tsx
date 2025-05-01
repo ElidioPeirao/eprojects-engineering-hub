@@ -9,6 +9,7 @@ interface UserContextType {
   deleteUser: (id: string) => void;
   getUserById: (id: string) => User | undefined;
   setPro: (id: string, isPro: boolean, expiryDays: number) => void;
+  setAdmin: (id: string, isAdmin: boolean) => void;
   updateToolAccess: (id: string, toolIds: string[]) => void;
   checkProExpirations: () => void;
 }
@@ -111,6 +112,10 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     });
   };
 
+  const setAdmin = (id: string, isAdmin: boolean) => {
+    updateUser(id, { isAdmin });
+  };
+
   const updateToolAccess = (id: string, toolIds: string[]) => {
     updateUser(id, { toolAccess: toolIds });
   };
@@ -139,6 +144,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     deleteUser,
     getUserById,
     setPro,
+    setAdmin,
     updateToolAccess,
     checkProExpirations,
   };
