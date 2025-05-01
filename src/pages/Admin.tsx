@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
@@ -47,7 +46,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { User, Tool } from "@/types";
-import { toast } from "@/components/ui/toast";
+import { toast } from "@/components/ui/sonner";
 
 const Admin = () => {
   const { currentUser, isAdmin } = useAuth();
